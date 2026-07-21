@@ -2,7 +2,7 @@
 
 Astro + TypeScript project for a pixel-faithful clone of `neokuchnie.pl`.
 
-The public pages intentionally render preserved raw HTML from the original site (`src/lib/original/*.html`) and process it at request time for local routing, SEO meta completion, and Telegram form delivery. This keeps the layout, generated CSS, fonts, images, animations, sliders, and LP-constructor behavior as close to the original as possible while adding a deployable modern project shell.
+The public pages intentionally render preserved raw HTML from the original site (`src/lib/original/*.html`) and process it at build time for local routing, SEO meta completion, and Telegram form delivery. This keeps the layout, generated CSS, fonts, images, animations, sliders, and LP-constructor behavior as close to the original as possible while adding a deployable modern project shell.
 
 ## Site Map
 
@@ -26,6 +26,7 @@ Local project resources:
 - `public/sitemap.xml`
 - `public/_headers`
 - `public/_redirects`
+- `functions/api/telegram.ts`
 
 ## Dependencies
 
@@ -40,7 +41,6 @@ Project dependencies:
 
 - Astro
 - TypeScript
-- `@astrojs/cloudflare`
 - `@astrojs/check`
 
 ## Environment
@@ -87,7 +87,7 @@ Recommended settings:
 - Node.js version: `20`
 - Environment variables: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 
-The project uses `@astrojs/cloudflare` with server output so the Telegram API route works on Cloudflare Pages Functions.
+The project uses a static Astro build plus a native Cloudflare Pages Function at `functions/api/telegram.ts` for form delivery.
 
 ## Pixel-Perfect Policy
 

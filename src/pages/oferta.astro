@@ -1,0 +1,8 @@
+---
+import source from "@lib/original/oferta.html?raw";
+import { renderRawPage } from "@lib/renderRawPage";
+
+const html = renderRawPage(source, "/oferta");
+---
+
+<Fragment set:html={html} />
