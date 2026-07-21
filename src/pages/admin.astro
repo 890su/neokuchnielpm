@@ -1,0 +1,164 @@
+---
+import AdminLayout from "@layouts/AdminLayout.astro";
+---
+
+<AdminLayout>
+  <main class="admin-workspace">
+    <aside class="admin-sidebar" aria-label="Blocks">
+      <h2 class="admin-panel-title">Blocks</h2>
+      <div id="blocks"></div>
+    </aside>
+    <section id="gjs" aria-label="GrapesJS canvas"></section>
+    <aside class="admin-inspector" aria-label="Inspector">
+      <div class="admin-panel-tabs" role="tablist" aria-label="Editor panels">
+        <button class="admin-panel-tab is-active" type="button" data-panel-tab="styles">Style</button>
+        <button class="admin-panel-tab" type="button" data-panel-tab="layers">Layers</button>
+        <button class="admin-panel-tab" type="button" data-panel-tab="traits">Traits</button>
+      </div>
+      <div class="admin-panel-content">
+        <div class="admin-panel is-active" id="styles"></div>
+        <div class="admin-panel" id="layers"></div>
+        <div class="admin-panel" id="traits"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/grapesjs/dist/grapes.min.js"></script>
+  <script src="https://unpkg.com/grapesjs-blocks-basic"></script>
+  <script src="https://unpkg.com/grapesjs-plugin-forms"></script>
+  <script src="https://unpkg.com/grapesjs-plugin-export"></script>
+  <script is:inline>
+    "use strict";
+
+    const password = window.prompt("Hasło administratora");
+    if (password !== "admin123") {
+      window.location.href = "/";
+      throw new Error("Unauthorized");
+    }
+
+    const normalizeAssetUrl = (url) => {
+      if (!url) return "";
+      if (url.startsWith("//")) return `https:${url}`;
+      return url;
+    };
+
+    const createDocument = (html, css, canvasStyles = []) => `<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neo Kuchnie | Kuchnie i Meble na Wymiar Warszawa</title>
+  <meta name="description" content="Neo Kuchnie - producent kuchni na wymiar w Warszawie. Unikalny design, przystępne ceny, 2 lata gwarancji. Zadzwoń: 662 755 566">
+  ${canvasStyles.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n  ")}
+  <style>${css}</style>
+</head>
+<body>${html}</body>
+</html>`;
+
+    const getIndexBody = async () => {
+      const savedHtml = localStorage.getItem("neoGrapesHtml");
+      const savedCss = localStorage.getItem("neoGrapesCss");
+      const savedCanvasStyles = JSON.parse(localStorage.getItem("neoGrapesCanvasStyles") || "[]");
+      if (savedHtml) return { html: savedHtml, css: savedCss || "", canvasStyles: savedCanvasStyles };
+
+      const indexResponse = await fetch("/");
+      const indexText = await indexResponse.text();
+      const parsed = new DOMParser().parseFromString(indexText, "text/html");
+      const inlineCss = [...parsed.querySelectorAll("style")].map((style) => style.textContent).join("\n");
+      const canvasStyles = [...parsed.querySelectorAll('link[rel="stylesheet"]')]
+        .map((link) => normalizeAssetUrl(link.getAttribute("href")))
+        .filter(Boolean);
+      parsed.querySelectorAll("script").forEach((script) => script.remove());
+      return { html: parsed.body.innerHTML, css: inlineCss, canvasStyles };
+    };
+
+    const initEditor = async () => {
+      const project = await getIndexBody();
+      const editor = grapesjs.init({
+        container: "#gjs",
+        height: "100%",
+        fromElement: false,
+        storageManager: false,
+        components: project.html,
+        style: project.css,
+        canvas: { styles: project.canvasStyles },
+        plugins: ["gjs-blocks-basic", "grapesjs-plugin-forms", "grapesjs-plugin-export"],
+        pluginsOpts: {
+          "gjs-blocks-basic": { flexGrid: true },
+          "grapesjs-plugin-forms": {},
+          "grapesjs-plugin-export": {}
+        },
+        deviceManager: {
+          devices: [
+            { name: "Desktop", width: "" },
+            { name: "Tablet", width: "768px", widthMedia: "768px" },
+            { name: "Mobile portrait", width: "375px", widthMedia: "480px" }
+          ]
+        },
+        panels: { defaults: [] },
+        blockManager: { appendTo: "#blocks" },
+        layerManager: { appendTo: "#layers" },
+        traitManager: { appendTo: "#traits" },
+        styleManager: {
+          appendTo: "#styles",
+          sectors: [
+            {
+              name: "Layout",
+              open: true,
+              properties: ["display", "position", "top", "right", "left", "bottom", "width", "height", "margin", "padding"]
+            },
+            {
+              name: "Typography",
+              open: true,
+              properties: ["font-family", "font-size", "font-weight", "color", "line-height", "text-align"]
+            },
+            {
+              name: "Decoration",
+              open: true,
+              properties: ["background-color", "border", "border-radius", "box-shadow"]
+            }
+          ]
+        }
+      });
+
+      document.querySelectorAll("[data-panel-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.panelTab;
+          document.querySelectorAll("[data-panel-tab]").forEach((tab) => {
+            tab.classList.toggle("is-active", tab === button);
+          });
+          document.querySelectorAll(".admin-panel").forEach((panel) => {
+            panel.classList.toggle("is-active", panel.id === target);
+          });
+        });
+      });
+
+      document.querySelectorAll("[data-device]").forEach((button) => {
+        button.addEventListener("click", () => editor.setDevice(button.dataset.device));
+      });
+
+      document.getElementById("save-project").addEventListener("click", () => {
+        localStorage.setItem("neoGrapesHtml", editor.getHtml());
+        localStorage.setItem("neoGrapesCss", editor.getCss());
+        localStorage.setItem("neoGrapesCanvasStyles", JSON.stringify(project.canvasStyles));
+        window.alert("Projekt zapisany w localStorage.");
+      });
+
+      document.getElementById("export-project").addEventListener("click", () => {
+        const output = createDocument(editor.getHtml(), editor.getCss(), project.canvasStyles);
+        localStorage.setItem("neoGrapesExport", output);
+        const blob = new Blob([output], { type: "text/html" });
+        const link = document.getElementById("download-link");
+        link.href = URL.createObjectURL(blob);
+        link.hidden = false;
+        link.textContent = "Pobierz HTML";
+        window.alert("Eksport gotowy. Kliknij Pobierz HTML.");
+      });
+    };
+
+    initEditor().catch((error) => {
+      console.error(error);
+      window.alert("Nie udało się załadować strony do edytora.");
+    });
+  </script>
+</AdminLayout>

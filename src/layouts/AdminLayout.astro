@@ -1,0 +1,25 @@
+---
+import "@styles/admin.css";
+import AdminToolbar from "@components/AdminToolbar.astro";
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neo Kuchnie | WYSIWYG Admin</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" />
+  </head>
+  <body class="admin-shell">
+    <AdminToolbar />
+    <slot />
+  </body>
+</html>

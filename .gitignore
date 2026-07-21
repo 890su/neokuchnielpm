@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+.env
+.env.*
+!.env.example
+
+*.log
+lighthouse-*.json
+
+.DS_Store
+Thumbs.db
