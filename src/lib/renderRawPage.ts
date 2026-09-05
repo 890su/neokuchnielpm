@@ -80,6 +80,21 @@ const responsiveSafetyStyle = `<style id="astro-responsive-safety">
   border: 0 !important;
 }
 
+[id^="m-wrapper-cookies-"] {
+  left: 20px !important;
+  right: auto !important;
+  bottom: 20px !important;
+  transform: none !important;
+}
+
+@media (max-width: 500px) {
+  [id^="m-wrapper-cookies-"] {
+    left: 10px !important;
+    right: auto !important;
+    bottom: 10px !important;
+  }
+}
+
 @media (max-width: 1199px) {
   html,
   body,
